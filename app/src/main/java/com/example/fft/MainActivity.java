@@ -18,21 +18,29 @@ import android.widget.Button;
  */
 
 public class MainActivity extends AppCompatActivity {
+
     //Częstotliwość próbkowania
-    int samplingFrequency = 120000;
+    final int samplingFrequency = 120000;
     //Częstotliwość sygnału
-    int f = 2800;
-    //Rozmiar
-    int blocksize = 2048;
-    //Tablice, które przechowują dane
+    final int f = 2800;
+    // Rozmiar bloku danych dla FFT
+    final int blocksize = 2048;
+    // Rozmiar okna do przechowywania odczytów temperatury
+    final int window = 25;
+
+
+    //Tablice, które przechowują dane sygnału
     double[] x;
     double[] y;
     double[] amplitude;
-    int window = 100;
     double[] readings = new double[window];
+
+
+    // Zmienna przechowująca obliczoną temperaturę
     double temperature = 0;
-    double a = 0.5;
-    double b = -111.1;
+    // Stałe do obliczania temperatury
+    final double a = 0.8056;
+    final double b = - 32.21;
     //Flaga, która oznacza stan działania programu
     boolean isRunning = false;
 
@@ -42,8 +50,6 @@ public class MainActivity extends AppCompatActivity {
     Canvas canvas;
     Paint paint;
     TextView tempOutputFinal;
-    TextView chartMin;
-    TextView chartMax;
 
     //Wielowątkowość
     MainActivity mainThread;
@@ -54,17 +60,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Wyszukiwanie elementów interfejsu
+        //Inicjalizacja tablic
+        x = new double[blocksize];
+        y = new double[blocksize];
+        amplitude = new double[blocksize / 2];
+
+        // Inicjalizacja elementów interfejsu
         tempOutputFinal = findViewById(R.id.tempOutputFinal);
-        chartMin = findViewById(R.id.chartMin);
-        chartMax = findViewById(R.id.chartMax);
 
         imageView = findViewById(R.id.wykres);
         bitmap = Bitmap.createBitmap(blocksize / 2, 520, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
         paint = new Paint();
         imageView.setImageBitmap(bitmap);
-        canvas.drawColor(Color.RED);
 
         Button buttonStart = findViewById(R.id.ButtonStart);
 
@@ -76,12 +84,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v)
             {
                 if (!isRunning) {
-                    buttonStart.setText("Stop");
-
+                    //uruchomienie nowego wątku pobierającego pomiary
                     readoutProcess = new ReadOut(mainThread);
                     readoutProcess.start();
+                    //Aktualizacja UI
+                    buttonStart.setText("Stop");
                 } else {
-                    readoutProcess.shouldRun = false;
+                    //Zmiana flagi procesu w celu jego wyłączenia
+                    if(readoutProcess != null) {
+                        readoutProcess.shouldRun = false;
+                    }
+
+                    //Aktualizacja UI
                     canvas.drawColor(Color.BLACK);
                     buttonStart.setText("Start");
                 }
@@ -91,21 +105,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //Inicjalizacja tablic
-        x = new double[blocksize];
-        y = new double[blocksize];
-        amplitude = new double[blocksize / 2];
-
         //Rysowanie wykresu
         DrawChart();
     }
     //Metoda rysująca wykres
     public void DrawChart()
     {
+        //Czyszczenie - zamalowywanie na czarno
         canvas.drawColor(Color.BLACK);
 
-        // Rysowanie danych amplitudy na zielono
-        paint.setColor(Color.GREEN);
+        // Rysowanie danych amplitudy na niebiesko
+        paint.setColor(Color.BLUE);
         for (int i = 0; i < amplitude.length; i++) {
             int downy = 510;
             int upy = 510 - (int) amplitude[i];
@@ -113,26 +123,26 @@ public class MainActivity extends AppCompatActivity {
             canvas.drawLine(i, downy, i, upy, paint);
         }
 
-        // Rysowanie linii siatki na czerwono
-        paint.setColor(Color.RED);
+        // Rysowanie linii siatki na różowo
+        paint.setColor(Color.MAGENTA);
         for (int i = 0; i < amplitude.length; i++) {
+            //Krótka linia co 10
             if (i % 10 == 0) {
                 canvas.drawLine(i, 510, i, 500, paint);
             }
+            //Długa linia co 100
             if (i % 100 == 0) {
-                canvas.drawLine(i, 510, i, 475, paint);
+                canvas.drawLine(i, 510, i, 450, paint);
             }
         }
-        // Aktualizacja etykiet wykresu
-        chartMin.setText("0");
-        chartMax.setText(String.valueOf(amplitude.length));
 
         // Aktualizacja wyświetlania temperatury
-        tempOutputFinal.setText(String.format("%.2f", temperature) + " C");
-        Refresh(500); // Odświeżanie wykresu co 500 ms
+        tempOutputFinal.setText(String.format("%.3f", temperature) + " C");
+        Refresh(500); // Handler który wywoła tą funkcję za 500ms
     }
     // Metoda odświeżająca wykres po określonym czasie.
     public void Refresh(int millis) {
+        //Handler uruchamiający metodę po 'millis' czasu
         final Handler handler = new Handler();
         final Runnable runnable = new Runnable() {
             @Override

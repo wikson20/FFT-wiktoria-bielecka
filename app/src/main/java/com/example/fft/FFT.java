@@ -28,7 +28,7 @@ public class FFT
     }
 
     public void fft(double[] x, double[] y) {
-        //Czyszczenie tablicy Y
+        //Czyszczenie tablicy Y, przygotowanie pamieci pod obliczenia
         for(int i=0;i<y.length;i++){
             y[i]=0;
         }

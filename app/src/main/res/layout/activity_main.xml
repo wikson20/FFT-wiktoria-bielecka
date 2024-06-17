@@ -55,20 +55,4 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <TextView
-        android:id="@+id/chartMin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0"
-        app:layout_constraintStart_toStartOf="@+id/wykres"
-        app:layout_constraintTop_toBottomOf="@+id/wykres" />
-
-    <TextView
-        android:id="@+id/chartMax"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="1024"
-        app:layout_constraintEnd_toEndOf="@+id/wykres"
-        app:layout_constraintTop_toBottomOf="@+id/wykres" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
